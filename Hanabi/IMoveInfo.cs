@@ -1,6 +1,6 @@
 ﻿namespace Hanabi
 {
-    public abstract class MoveInfo
+    public interface IMoveInfo
     {
     }
 }

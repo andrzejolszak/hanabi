@@ -6,7 +6,7 @@
 
         bool _isLastRound;
         int _playerWhoDrewLastCard = -1;
-        Dictionary<int, IAgent> _players = new Dictionary<int, IAgent>();
+        Dictionary<int, (IPlayer Player, PrivateGameView PrivateView)> _players = new();
 
         public int NumPlayers { get; }
         public int NumLives { get; internal set; }
@@ -24,7 +24,7 @@
         /// Useful for agents to update their probabilities after a move.
         /// This must be cast to the appropriate MoveInfo subclass depending on the type of move that was made.
         /// </summary>
-        public MoveInfo? LastMoveInfo { get; private set; }
+        public IMoveInfo? LastMoveInfo { get; private set; }
 
         public Game(int numPlayers, Deck deck, int numStartingLives = 3, bool doSetup = true)
         {
@@ -59,9 +59,11 @@
             }
         }
 
-        public void RegisterAgent(int playerIndex, IAgent agent)
+        public void RegisterAgent(int playerIndex, IPlayer agent)
         {
-            _players[playerIndex] = agent;
+            PrivateGameView view = new PrivateGameView(playerIndex, this);
+            agent.Init(playerIndex, view);
+            _players[playerIndex] = (agent, view);
         }
 
         public void Discard(int positionInHand, bool informAgents = true)
@@ -90,7 +92,7 @@
             {
                 foreach (var agent in _players.Values)
                 {
-                    agent.RespondToMove(moveInfo);
+                    agent.Player.ObserveMove(moveInfo);
                 }
             }
 
@@ -123,7 +125,7 @@
             {
                 foreach (var agent in _players.Values)
                 {
-                    agent.RespondToMove(moveInfo);
+                    agent.Player.ObserveMove(moveInfo);
                 }
             }
             
@@ -161,7 +163,7 @@
             {
                 foreach (var agent in _players.Values)
                 {
-                    agent.RespondToMove(moveInfo);
+                    agent.Player.ObserveMove(moveInfo);
                 }
             }
 
@@ -215,7 +217,7 @@
             {
                 foreach (var agent in _players.Values)
                 {
-                    agent.RespondToMove(moveInfo);
+                    agent.Player.ObserveMove(moveInfo);
                 }
             }
 
@@ -257,7 +259,7 @@
                 PlayerHands = clonedPlayerHands,
                 _playerWhoDrewLastCard = _playerWhoDrewLastCard,
                 _isLastRound = _isLastRound,
-                _players = new Dictionary<int, IAgent>(_players),
+                _players = new (_players),
                 Stacks = new Dictionary<Color, int>(Stacks),
                 DiscardPile = new List<Card>(DiscardPile)
             };

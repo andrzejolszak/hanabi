@@ -13,7 +13,7 @@ namespace AgentTests
         public void AvailableMoves_StartingPosition()
         {
             var game = new Game(2, GameTests.TestDeck());
-            var adapter = new GameView(0, game);
+            var adapter = new PrivateGameView(0, game);
 
             List<string> availableMoves = adapter.AvailableMoves().ToList();
 
@@ -40,7 +40,7 @@ namespace AgentTests
         public void AvailableMoves_NoTokens()
         {
             var game = new Game(2, GameTests.TestDeck()) { NumTokens = 0 };
-            var view = new GameView(0, game);
+            var view = new PrivateGameView(0, game);
 
             List<string> availableMoves = view.AvailableMoves().ToList();
 
@@ -61,7 +61,7 @@ namespace AgentTests
         public void TestMove_ReturnsGameStateThatWouldResultFromProvidedTheory()
         {
             var game = new Game(2, GameTests.TestDeck()) { NumTokens = 1 };
-            var view = new GameView(0, game);
+            var view = new PrivateGameView(0, game);
 
             var hypotheticalHand = new List<Card>
             {

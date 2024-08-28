@@ -28,12 +28,11 @@ namespace Agents
 
             int numPlayers = 4;
 
-            var agents = new List<BayesianAgent>();
+            var agents = new List<BayesianPlayer>();
             var game = new Game(numPlayers, Deck.Random(randomizer));
             for (int i = 0; i < numPlayers; i++)
             {
-                var view = new GameView(i, game);
-                var agent = new BayesianAgent(i, view);
+                var agent = new BayesianPlayer();
                 game.RegisterAgent(i, agent);
                 agents.Add(agent);
             }

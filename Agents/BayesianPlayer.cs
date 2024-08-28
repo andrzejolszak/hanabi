@@ -2,11 +2,13 @@
 
 namespace Agents
 {
-    public class BayesianAgent : IAgent
+    public class BayesianPlayer : IPlayer
     {
-        GameView _view;
+        PrivateGameView _view;
         const int _numMonteCarloSamples = 100;
         const int _evaluationDepth = 0;
+
+        private Randomizer _random;
 
         public int PlayerIndex { get; private set; }
 
@@ -32,8 +34,19 @@ namespace Agents
 
         public OptionTracker DeckOptionTracker { get; private set; }
 
-        public BayesianAgent(int playerIndex, GameView gameAdapter)
+        public BayesianPlayer()
         {
+        }
+
+        internal BayesianPlayer(int playerIndex, PrivateGameView gameAdapter) : this()
+        {
+            this.Init(playerIndex, gameAdapter);
+        }
+
+        public void Init(int playerIndex, PrivateGameView gameAdapter)
+        {
+            this._random = new Randomizer(123);
+
             PlayerIndex = playerIndex;
             _view = gameAdapter;
 
@@ -42,7 +55,7 @@ namespace Agents
             DeckOptionTracker = initialOptions.Clone();
         }
 
-        public double Evaluate(Game game, int depth)
+        internal double Evaluate(Game game, int depth)
         {
             if (depth == 0)
                 return EvaluateDepthZero(game);
@@ -50,13 +63,13 @@ namespace Agents
             return 0;
         }
 
-        public double EvaluateDepthZero(Game game)
+        private double EvaluateDepthZero(Game game)
         {
             double draftScore = game.Score() + LivesFactor(game.NumLives) + TokensFactor(game.NumTokens);
             return game.IsWinnable() ? draftScore : draftScore - UnwinnablePenalty;
         }
 
-        public void TakeTurn(Randomizer randomizer)
+        public string TakeTurn()
         {
             IEnumerable<string> availableMoves = _view.AvailableMoves();
 
@@ -65,7 +78,7 @@ namespace Agents
             foreach (string move in availableMoves)
             {
                 // Generate a random hand from the individual probability distributions
-                IList<HiddenState> possibleHiddenStates = DrawHiddenStates(HandOptionTrackers, DeckOptionTracker, _numMonteCarloSamples, randomizer);
+                IList<HiddenState> possibleHiddenStates = DrawHiddenStates(HandOptionTrackers, DeckOptionTracker, _numMonteCarloSamples, this._random);
 
                 double totalScore = possibleHiddenStates.Sum(hiddenState =>
                 {
@@ -89,8 +102,7 @@ namespace Agents
             if (bestMove == null)
                 throw new Exception("Failed to select a best move");
 
-            Console.WriteLine($"Player {PlayerIndex}: {bestMove} (expected score {bestExpectedScore})");
-            _view.MakeMove(bestMove);
+            return bestMove;
         }
 
         /// <summary>
@@ -162,7 +174,7 @@ namespace Agents
                 pair => Deck.NumInstances(pair.Key.Item2) - pair.Value));
         }
 
-        public void RespondToMove(MoveInfo moveInfo)
+        public void ObserveMove(IMoveInfo moveInfo)
         {
             switch (moveInfo)
             {

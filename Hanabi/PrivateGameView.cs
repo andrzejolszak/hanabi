@@ -1,13 +1,13 @@
 ﻿using Hanabi;
 
-namespace Agents
+namespace Hanabi
 {
-    public class GameView
+    public class PrivateGameView
     {
         int _playerIndex;
         Game _game;
 
-        public GameView(int playerIndex, Game game)
+        public PrivateGameView(int playerIndex, Game game)
         {
             _playerIndex = playerIndex;
             _game = game;
@@ -69,27 +69,6 @@ namespace Agents
             return hypotheticalGame;
         }
 
-        public void MakeMove(string move)
-        {
-            string[] tokens = move.Split();
-
-            if (tokens[0] == "tell")
-            {
-                Tell(tokens);
-                return;
-            }
-
-            switch (tokens[0])
-            {
-                case "play":
-                    _game.PlayCard(int.Parse(tokens[1]));
-                    return;
-                case "discard":
-                    _game.Discard(int.Parse(tokens[1]));
-                    return;
-            }
-        }
-
         private Game GameWithHypothesis(IEnumerable<Card> hypotheticalHand, Card? hypotheticalNextCard)
         {
             var ret = _game.Clone();
@@ -120,27 +99,11 @@ namespace Agents
             }
         }
 
-        void Tell(string[] moveTokens)
-        {
-            int playerIndex = int.Parse(moveTokens[2]);
-
-            if (moveTokens[4] == "color")
-            {
-                Color color = Enum.Parse<Color>(moveTokens[5], ignoreCase: true);
-                _game.TellColor(playerIndex, color);
-            }
-            else
-            {
-                int number = int.Parse(moveTokens[5]);
-                _game.TellNumber(playerIndex, number);
-            }
-        }
-
         public int NumPlayers => _game.NumPlayers;
         public int NumTokens => _game.NumTokens;
         public int NumLives => _game.NumLives;
         public List<Card> DiscardPile => _game.DiscardPile;
-        public MoveInfo LastMoveInfo => _game.LastMoveInfo;
+        public IMoveInfo LastMoveInfo => _game.LastMoveInfo;
         public int CardsPerPlayer => _game.CardsPerPlayer;
 
         public List<List<Card>> OtherHands

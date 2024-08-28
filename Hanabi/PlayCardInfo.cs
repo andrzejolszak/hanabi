@@ -3,7 +3,7 @@
     /// <summary>
     /// Contains information visible to ALL players after a card is played
     /// </summary>
-    public class PlayCardInfo : MoveInfo
+    public class PlayCardInfo : IMoveInfo
     {
         public int PlayerIndex { get; set; }
         public int HandPosition { get; set; }

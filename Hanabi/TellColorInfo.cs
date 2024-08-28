@@ -1,6 +1,6 @@
 ﻿namespace Hanabi
 {
-    public class TellColorInfo : MoveInfo
+    public class TellColorInfo : IMoveInfo
     {
         public int PlayerIndex { get; set; }
         public int RecipientIndex { get; set; }

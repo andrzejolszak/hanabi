@@ -13,8 +13,8 @@ namespace AgentTests
         public void Evaluate_DepthZero()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view)
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view)
             {
                 LivesFactor = (int n) => n,
                 TokensFactor = (int n) => 0.5 * n
@@ -37,8 +37,8 @@ namespace AgentTests
         public void HandOptionTrackers_GameStart_IsBasedOnlyOnTeammatesHands()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view);
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view);
 
             // There are 50 cards in total, so by default, each card has a (numInstances / 50) chance of
             // being any specific (color, number) pair. However, at the start of the game we can already
@@ -64,8 +64,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterTell_ReflectsNewKnowledge()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view);
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -92,8 +92,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterOwnDiscard_ReflectsNewKnowledge()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view);
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -118,8 +118,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterTeammateDiscard_ReflectsNewKnowledge()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view);
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -147,8 +147,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterOwnPlay_ReflectsNewKnowledge()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view);
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -173,8 +173,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterOwnPlay_AccountsForChardShift()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(1, game);
-            var agent = new BayesianAgent(1, view);
+            var view = new PrivateGameView(1, game);
+            var agent = new BayesianPlayer(1, view);
 
             game.RegisterAgent(1, agent);
 
@@ -197,8 +197,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterOwnDiscard_AccountsForCardShift()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(1, game);
-            var agent = new BayesianAgent(1, view);
+            var view = new PrivateGameView(1, game);
+            var agent = new BayesianPlayer(1, view);
 
             game.RegisterAgent(1, agent);
 
@@ -221,8 +221,8 @@ namespace AgentTests
         public void HandOptionTrackers_AfterTeammatePlay_ReflectsNewKnowledge()
         {
             var game = new Game(3, GameTests.TestDeck());
-            var view = new GameView(0, game);
-            var agent = new BayesianAgent(0, view);
+            var view = new PrivateGameView(0, game);
+            var agent = new BayesianPlayer(0, view);
 
             game.RegisterAgent(0, agent);
 

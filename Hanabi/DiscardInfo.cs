@@ -1,6 +1,6 @@
 ﻿namespace Hanabi
 {
-    public class DiscardInfo : MoveInfo
+    public class DiscardInfo : IMoveInfo
     {
         public int PlayerIndex { get; set; }
         public int HandPosition { get; set; }
