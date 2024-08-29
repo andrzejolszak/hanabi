@@ -1,4 +1,6 @@
 ﻿using Hanabi;
+using System.Collections.Concurrent;
+using System.Formats.Asn1;
 
 namespace Hanabi
 {
@@ -6,6 +8,7 @@ namespace Hanabi
     {
         int _playerIndex;
         Game _game;
+        private ConcurrentDictionary<object, object> _userDataTags = new ConcurrentDictionary<object, object>();
 
         public PrivateGameView(int playerIndex, Game game)
         {
@@ -13,14 +16,29 @@ namespace Hanabi
             _game = game;
         }
 
-        string GetColorName(Color color) => Enum.GetName(typeof(Color), color)?.ToLower() ?? "";
+        public void SetTag(Card card, object tag)
+        {
+            this._userDataTags[card] = tag;
+        }
 
-        public IEnumerable<string> AvailableMoves()
+        public void SetTag(int player, object tag)
+        {
+            this._userDataTags[player] = tag;
+        }
+
+        public void SetTag(Guid ownCardId, object tag)
+        {
+            this._userDataTags[ownCardId] = tag;
+        }
+
+        public static string GetColorName(Color color) => Enum.GetName(typeof(Color), color)?.ToLower() ?? "";
+
+        public IEnumerable<string> GetAvailableMoves()
         {
             List<Card> hand = _game.PlayerHands[_game.CurrentPlayer];
 
-            IEnumerable<string> playOptions = hand.Select((_, i) => $"discard {i}");
-            IEnumerable<string> discardOptions = hand.Select((_, i) => $"play {i}");
+            IEnumerable<string> playOptions = hand.Select((_, i) => DiscardInfo.FormatMoveText(i));
+            IEnumerable<string> discardOptions = hand.Select((_, i) => PlayCardInfo.FormatMoveText(i));
 
             if (_game.NumTokens <= 0)
                 return playOptions.Concat(discardOptions);
@@ -32,11 +50,11 @@ namespace Hanabi
 
                 var colorOptions = otherHand.Select(card => card.Color)
                     .Distinct()
-                    .Select(color => $"tell player {iPlayer} about color {GetColorName(color)}");
+                    .Select(color => TellColorInfo.FormatMoveText(iPlayer, color));
 
                 var numberOptions = otherHand.Select(card => card.Number)
                     .Distinct()
-                    .Select(number => $"tell player {iPlayer} about number {number}");
+                    .Select(number => TellNumberInfo.FormatMoveText(iPlayer, number));
 
                 return colorOptions.Concat(numberOptions);
             });
@@ -47,14 +65,35 @@ namespace Hanabi
         /// <summary>
         /// Returns the game state that would result if the hidden cards had the provided values and the player made the provided move
         /// </summary>
-        public Game TestMove(string move, IEnumerable<Card> hypotheticalHand, Card? hypotheticalNextCard)
+        public PrivateGameView TestMove(string move, IEnumerable<Card> hypotheticalHand, Card? hypotheticalNextCard)
         {
-            Game hypotheticalGame = GameWithHypothesis(hypotheticalHand, hypotheticalNextCard);
+            Game hypotheticalGame = _game.Clone();
+            hypotheticalGame.PlayerHands[_playerIndex] = hypotheticalHand.ToList();
 
+            var hypotheticalDeck = new List<Card>();
+            if (hypotheticalNextCard != null)
+                hypotheticalDeck.Add(hypotheticalNextCard);
+
+            hypotheticalGame.Deck = new Deck(hypotheticalDeck);
             string[] tokens = move.Split();
 
             if (tokens[0] == "tell")
-                return ApplyTell(hypotheticalGame, tokens, informAgents: false);
+            {
+                int playerIndex = int.Parse(tokens[2]);
+
+                if (tokens[4] == "color")
+                {
+                    Color color = Enum.Parse<Color>(tokens[5], ignoreCase: true);
+                    hypotheticalGame.TellColor(playerIndex, color, false);
+                    return new PrivateGameView(this._playerIndex, hypotheticalGame);
+                }
+                else
+                {
+                    int number = int.Parse(tokens[5]);
+                    hypotheticalGame.TellNumber(playerIndex, number, false);
+                    return new PrivateGameView(this._playerIndex, hypotheticalGame);
+                }
+            }
 
             switch (tokens[0])
             {
@@ -66,54 +105,86 @@ namespace Hanabi
                     break;
             }
 
-            return hypotheticalGame;
+            return new PrivateGameView(this._playerIndex, hypotheticalGame);
         }
 
-        private Game GameWithHypothesis(IEnumerable<Card> hypotheticalHand, Card? hypotheticalNextCard)
+        public void ReorderHand(List<Guid> reorderedHand)
         {
-            var ret = _game.Clone();
-            ret.PlayerHands[_playerIndex] = hypotheticalHand.ToList();
-
-            var hypotheticalDeck = new List<Card>();
-            if (hypotheticalNextCard != null)
-                hypotheticalDeck.Add(hypotheticalNextCard);
-
-            ret.Deck = new Deck(hypotheticalDeck);
-            return ret;
-        }
-
-        Game ApplyTell(Game gameClone, string[] moveTokens, bool informAgents = true)
-        {
-            int playerIndex = int.Parse(moveTokens[2]);
-
-            if (moveTokens[4] == "color")
+            if (this.OwnHand.Count != reorderedHand.Count || reorderedHand.Count != reorderedHand.ToHashSet().Count || this.OwnHand.Concat(reorderedHand).ToHashSet().Count != reorderedHand.Count)
             {
-                Color color = Enum.Parse<Color>(moveTokens[5], ignoreCase: true);
-                gameClone.TellColor(playerIndex, color, informAgents);
-                return gameClone;
-            } else
-            {
-                int number = int.Parse(moveTokens[5]);
-                gameClone.TellNumber(playerIndex, number, informAgents);
-                return gameClone;
+                throw new InvalidOperationException("Invalid card reordering");
             }
+
+            List<Card> target = this._game.PlayerHands[this._playerIndex];
+            Dictionary<Guid, Card> cardsCopy = target.ToDictionary(x => x.CardId);
+
+            target.Clear();
+            foreach(Guid g in reorderedHand)
+            {
+                target.Add(cardsCopy[g]);
+            }
+        }
+
+        public int GetOwnCardIndex(Guid cardId)
+        {
+            return this._game.PlayerHands[this._playerIndex].FindIndex(x => x.CardId == cardId);
+        }
+
+        public Guid GetCardId(int handIndex)
+        {
+            return this._game.PlayerHands[this._playerIndex][handIndex].CardId;
+        }
+
+        public int GetPlayerCardIndex(int playerIndex, Card card)
+        {
+            if (playerIndex == this._playerIndex)
+            {
+                throw new InvalidOperationException("Invalid other player index");
+            }
+
+            return this._game.PlayerHands[playerIndex].IndexOf(card);
+        }
+
+        public Card GetPlayerCard(int playerIndex, int handIndex)
+        {
+            if (playerIndex == this._playerIndex)
+            {
+                throw new InvalidOperationException("Invalid other player index");
+            }
+
+            return this._game.PlayerHands[playerIndex][handIndex];
         }
 
         public int NumPlayers => _game.NumPlayers;
         public int NumTokens => _game.NumTokens;
         public int NumLives => _game.NumLives;
         public List<Card> DiscardPile => _game.DiscardPile;
-        public IMoveInfo LastMoveInfo => _game.LastMoveInfo;
+        public IMoveInfo? LastMoveInfo => _game.LastMoveInfo;
         public int CardsPerPlayer => _game.CardsPerPlayer;
 
-        public List<List<Card>> OtherHands
+        public List<(int PlayerIndex, List<Card> Hand)> OtherHands
         {
             get
             {
-                var hands = _game.PlayerHands.ToList();
-                hands.RemoveAt(_playerIndex);
+                List<(int, List<Card>)> hands = new List<(int, List<Card>)>();
+                for(int i = 0; i < this._game.PlayerHands.Count; i++)
+                {
+                    if (i == this._playerIndex)
+                    {
+                        continue;
+                    }
+
+                    hands.Add((i, this._game.PlayerHands[i]));
+                }
+
                 return hands;
             }
         }
+
+        public List<Guid> OwnHand => this._game.PlayerHands[this._playerIndex].Select(x => x.CardId).ToList();
+
+        public bool IsWinnable => this._game.IsWinnable();
+
+        public int Score => this._game.Score();
     }
 }

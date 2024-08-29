@@ -2,7 +2,7 @@
 {
     public interface IPlayer
     {
-        void Init(int playerIndex, PrivateGameView gameAdapter);
+        void Init(int playerIndex, PrivateGameView privateGameView);
 
         string TakeTurn();
 

@@ -1,6 +1,6 @@
 ﻿using Hanabi;
 
-namespace Agents
+namespace Agents.BayesPlayer
 {
     public class DiscreteProbabilityDistribution<T> where T : notnull
     {

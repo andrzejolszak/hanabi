@@ -3,7 +3,7 @@
     public class Deck : ICloneable
     {
         private int _index = 0;
-        private List<Card> _cards;
+        internal List<Card> _cards;
 
         public int NumCardsRemaining => _cards.Count - _index;
 

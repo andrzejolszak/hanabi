@@ -5,10 +5,10 @@ namespace Agents
     public class GameRunner
     {
         private Game _game;
-        private IList<BayesianPlayer> _agents;
+        private IList<IPlayer> _agents;
         private Randomizer _randomizer;
 
-        public GameRunner(Game game, IList<BayesianPlayer> agents, Randomizer randomizer)
+        public GameRunner(Game game, IList<IPlayer> agents, Randomizer randomizer)
         {
             _game = game;
             _agents = agents;
@@ -76,35 +76,6 @@ namespace Agents
                 var input = Console.ReadLine();
                 if (string.IsNullOrEmpty(input))
                     return;
-
-                if (input.StartsWith("options"))
-                {
-                    string[] tokens = input.Split();
-                    int playerIndex = int.Parse(tokens[1]);
-
-                    var agent = _agents[playerIndex];
-
-                    var trackerTables = agent.HandOptionTrackers.Select(tracker => tracker.TableRepresentation())
-                        .Append(agent.DeckOptionTracker.TableRepresentation());
-
-                    int tableWidth = trackerTables.First().First().Length + 3;
-
-                    // Write headers for tracker tables
-                    var tableNames = agent.HandOptionTrackers.Select((tracker, i) => $"Hand Pos {i}")
-                        .Append("Deck")
-                        .Select(name => name.PadRight(tableWidth));
-
-                    string headerLine = string.Join("", tableNames);
-
-                    Console.WriteLine();
-                    Console.WriteLine(headerLine);
-                    for (int iLine = 0; iLine < trackerTables.First().Count(); iLine++)
-                    {
-                        string line = string.Join("   ", trackerTables.Select(table => table.ElementAt(iLine)));
-                        Console.WriteLine(line);
-                    }
-                    Console.WriteLine();
-                }
             }
 
         }

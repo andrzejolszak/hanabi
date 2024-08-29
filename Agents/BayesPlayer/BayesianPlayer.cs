@@ -1,6 +1,6 @@
 ﻿using Hanabi;
 
-namespace Agents
+namespace Agents.BayesPlayer
 {
     public class BayesianPlayer : IPlayer
     {
@@ -34,18 +34,16 @@ namespace Agents
 
         public OptionTracker DeckOptionTracker { get; private set; }
 
-        public BayesianPlayer()
+        public static BayesianPlayer TestInstance(int playerIndex, PrivateGameView gameAdapter)
         {
-        }
-
-        internal BayesianPlayer(int playerIndex, PrivateGameView gameAdapter) : this()
-        {
-            this.Init(playerIndex, gameAdapter);
+            BayesianPlayer player = new BayesianPlayer();
+            player.Init(playerIndex, gameAdapter);
+            return player;
         }
 
         public void Init(int playerIndex, PrivateGameView gameAdapter)
         {
-            this._random = new Randomizer(123);
+            _random = new Randomizer(123);
 
             PlayerIndex = playerIndex;
             _view = gameAdapter;
@@ -55,7 +53,7 @@ namespace Agents
             DeckOptionTracker = initialOptions.Clone();
         }
 
-        internal double Evaluate(Game game, int depth)
+        internal double Evaluate(PrivateGameView game, int depth)
         {
             if (depth == 0)
                 return EvaluateDepthZero(game);
@@ -63,22 +61,22 @@ namespace Agents
             return 0;
         }
 
-        private double EvaluateDepthZero(Game game)
+        private double EvaluateDepthZero(PrivateGameView game)
         {
-            double draftScore = game.Score() + LivesFactor(game.NumLives) + TokensFactor(game.NumTokens);
-            return game.IsWinnable() ? draftScore : draftScore - UnwinnablePenalty;
+            double draftScore = game.Score + LivesFactor(game.NumLives) + TokensFactor(game.NumTokens);
+            return game.IsWinnable ? draftScore : draftScore - UnwinnablePenalty;
         }
 
         public string TakeTurn()
         {
-            IEnumerable<string> availableMoves = _view.AvailableMoves();
+            IEnumerable<string> availableMoves = _view.GetAvailableMoves();
 
             double bestExpectedScore = double.NegativeInfinity;
             string? bestMove = null;
             foreach (string move in availableMoves)
             {
                 // Generate a random hand from the individual probability distributions
-                IList<HiddenState> possibleHiddenStates = DrawHiddenStates(HandOptionTrackers, DeckOptionTracker, _numMonteCarloSamples, this._random);
+                IList<HiddenState> possibleHiddenStates = DrawHiddenStates(HandOptionTrackers, DeckOptionTracker, _numMonteCarloSamples, _random);
 
                 double totalScore = possibleHiddenStates.Sum(hiddenState =>
                 {
@@ -87,7 +85,7 @@ namespace Agents
                     Card? nextCard = hiddenState.NextCard == null
                         ? null
                         : new Card(hiddenState.NextCard.Value.Item1, hiddenState.NextCard.Value.Item2);
-                    Game resultingState = _view.TestMove(move, hand, nextCard);
+                    PrivateGameView resultingState = _view.TestMove(move, hand, nextCard);
                     return Evaluate(resultingState, _evaluationDepth);
                 });
 
@@ -134,7 +132,8 @@ namespace Agents
                 if (!deckOpts.HasOptions())
                 {
 
-                } else
+                }
+                else
                 {
                     Dictionary<(Color, int), double> deckProbabilities = deckOpts.GetProbabilities();
                     var deckDist = new DiscreteProbabilityDistribution<(Color, int)>(deckProbabilities, randomizer);
@@ -160,7 +159,7 @@ namespace Agents
 
             for (int iHand = 0; iHand < _view.OtherHands.Count; iHand++)
             {
-                List<Card> hand = _view.OtherHands[iHand];
+                List<Card> hand = _view.OtherHands[iHand].Hand;
                 for (int iCard = 0; iCard < _view.CardsPerPlayer; iCard++)
                 {
                     Card card = hand[iCard];
@@ -195,15 +194,16 @@ namespace Agents
 
         void RespondToTellNumber(TellNumberInfo info)
         {
-            if (info.RecipientIndex != this.PlayerIndex)
+            if (info.RecipientIndex != PlayerIndex)
                 return;
 
             for (int i = 0; i < _view.CardsPerPlayer; i++)
             {
-                if (info.HandPositions.Contains(i))
+                if (info.HandIndexes.Contains(i))
                 {
                     HandOptionTrackers[i].NumberIs(info.Number);
-                } else
+                }
+                else
                 {
                     HandOptionTrackers[i].NumberIsNot(info.Number);
                 }
@@ -212,12 +212,12 @@ namespace Agents
 
         void RespondToTellColor(TellColorInfo info)
         {
-            if (info.RecipientIndex != this.PlayerIndex)
+            if (info.RecipientIndex != PlayerIndex)
                 return;
 
             for (int i = 0; i < _view.CardsPerPlayer; i++)
             {
-                if (info.HandPositions.Contains(i))
+                if (info.HandIndexes.Contains(i))
                 {
                     HandOptionTrackers[i].ColorIs(info.Color);
                 }
@@ -230,23 +230,24 @@ namespace Agents
 
         void RespondToDiscard(DiscardInfo info)
         {
-            if (info.PlayerIndex == this.PlayerIndex)
+            if (info.PlayerIndex == PlayerIndex)
             {
                 // The top card on the discard pile will be the one I just discarded.
                 Card discarded = _view.DiscardPile.Last();
-                ShiftTrackers(info.HandPosition);
+                ShiftTrackers(info.HandIndex);
 
                 DeckOptionTracker.RemoveInstance(discarded.Color, discarded.Number);
                 foreach (var tracker in HandOptionTrackers)
                     tracker.RemoveInstance(discarded.Color, discarded.Number);
-            } else
+            }
+            else
             {
-                int otherPlayerIndex = info.PlayerIndex > this.PlayerIndex ? info.PlayerIndex - 1 : info.PlayerIndex;
+                int otherPlayerIndex = info.PlayerIndex > PlayerIndex ? info.PlayerIndex - 1 : info.PlayerIndex;
 
                 // Make a note of the discarding player's replacement card if they got one
-                if (_view.OtherHands[otherPlayerIndex].Count == _view.CardsPerPlayer)
+                if (_view.OtherHands[otherPlayerIndex].Hand.Count == _view.CardsPerPlayer)
                 {
-                    Card replacementCard = _view.OtherHands[otherPlayerIndex].Last();
+                    Card replacementCard = _view.OtherHands[otherPlayerIndex].Hand.Last();
                     DeckOptionTracker.RemoveInstance(replacementCard.Color, replacementCard.Number);
                     foreach (var tracker in HandOptionTrackers)
                         tracker.RemoveInstance(replacementCard.Color, replacementCard.Number);
@@ -256,21 +257,22 @@ namespace Agents
 
         void RespondToPlay(PlayCardInfo info)
         {
-            if (info.PlayerIndex == this.PlayerIndex)
+            if (info.PlayerIndex == PlayerIndex)
             {
-                ShiftTrackers(info.HandPosition);
+                ShiftTrackers(info.HandIndex);
 
                 DeckOptionTracker.RemoveInstance(info.CardColor, info.CardNumber);
                 foreach (var tracker in HandOptionTrackers)
                     tracker.RemoveInstance(info.CardColor, info.CardNumber);
-            } else
+            }
+            else
             {
-                int otherPlayerIndex = info.PlayerIndex > this.PlayerIndex ? info.PlayerIndex - 1 : info.PlayerIndex;
+                int otherPlayerIndex = info.PlayerIndex > PlayerIndex ? info.PlayerIndex - 1 : info.PlayerIndex;
 
                 // Make a note of the playing player's replacement card if they got one
-                if (_view.OtherHands[otherPlayerIndex].Count == _view.CardsPerPlayer)
+                if (_view.OtherHands[otherPlayerIndex].Hand.Count == _view.CardsPerPlayer)
                 {
-                    Card replacementCard = _view.OtherHands[otherPlayerIndex].Last();
+                    Card replacementCard = _view.OtherHands[otherPlayerIndex].Hand.Last();
                     DeckOptionTracker.RemoveInstance(replacementCard.Color, replacementCard.Number);
                     foreach (var tracker in HandOptionTrackers)
                         tracker.RemoveInstance(replacementCard.Color, replacementCard.Number);

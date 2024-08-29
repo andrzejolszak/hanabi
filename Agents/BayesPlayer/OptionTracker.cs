@@ -1,6 +1,6 @@
 ﻿using Hanabi;
 
-namespace Agents
+namespace Agents.BayesPlayer
 {
     public class OptionTracker
     {
@@ -72,7 +72,7 @@ namespace Agents
         public Dictionary<(Color, int), double> GetProbabilities()
         {
             int numLeftTotal = _numLeftByType.Values.Sum();
-            return _numLeftByType.ToDictionary(kv => kv.Key, kv => (double) kv.Value / numLeftTotal);
+            return _numLeftByType.ToDictionary(kv => kv.Key, kv => (double)kv.Value / numLeftTotal);
         }
 
         public OptionTracker Clone()

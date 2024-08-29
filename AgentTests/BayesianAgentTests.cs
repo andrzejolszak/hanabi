@@ -1,4 +1,4 @@
-using Agents;
+using Agents.BayesPlayer;
 using Hanabi;
 using HanabiTests;
 using NUnit.Framework;
@@ -14,23 +14,21 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view)
-            {
-                LivesFactor = (int n) => n,
-                TokensFactor = (int n) => 0.5 * n
-            };
+            var agent = BayesianPlayer.TestInstance(0, view);
+            agent.LivesFactor = (int n) => n;
+            agent.TokensFactor = (int n) => 0.5 * n;
 
-            Assert.That(agent.Evaluate(game, 0), Is.EqualTo(7));
+            Assert.That(agent.Evaluate(view, 0), Is.EqualTo(7));
             game.TellNumber(2, 1); // Player 0 tells player 2 about their two 1s
-            Assert.That(agent.Evaluate(game, 0), Is.EqualTo(6.5));
+            Assert.That(agent.Evaluate(view, 0), Is.EqualTo(6.5));
             game.TellColor(0, Color.Blue);
-            Assert.That(agent.Evaluate(game, 0), Is.EqualTo(6));
+            Assert.That(agent.Evaluate(view, 0), Is.EqualTo(6));
             game.PlayCard(1); // Player 2 plays their [Red 1]
-            Assert.That(agent.Evaluate(game, 0), Is.EqualTo(7));
+            Assert.That(agent.Evaluate(view, 0), Is.EqualTo(7));
             game.PlayCard(0); // Player 0 plays another [Red 1]. It has nowhere to go so they lose a life
-            Assert.That(agent.Evaluate(game, 0), Is.EqualTo(6));
+            Assert.That(agent.Evaluate(view, 0), Is.EqualTo(6));
             game.Discard(0); // Player 1 discards their [Yellow 5]. Our agent can see that the game is unwinnable.
-            Assert.That(agent.Evaluate(game, 0), Is.LessThan(0));
+            Assert.That(agent.Evaluate(view, 0), Is.LessThan(0));
         }
 
         [Test]
@@ -38,7 +36,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view);
+            var agent = BayesianPlayer.TestInstance(0, view);
 
             // There are 50 cards in total, so by default, each card has a (numInstances / 50) chance of
             // being any specific (color, number) pair. However, at the start of the game we can already
@@ -65,7 +63,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view);
+            var agent = BayesianPlayer.TestInstance(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -93,7 +91,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view);
+            var agent = BayesianPlayer.TestInstance(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -119,7 +117,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view);
+            var agent = BayesianPlayer.TestInstance(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -148,7 +146,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view);
+            var agent = BayesianPlayer.TestInstance(0, view);
 
             game.RegisterAgent(0, agent);
 
@@ -174,7 +172,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(1, game);
-            var agent = new BayesianPlayer(1, view);
+            var agent = BayesianPlayer.TestInstance(1, view);
 
             game.RegisterAgent(1, agent);
 
@@ -198,7 +196,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(1, game);
-            var agent = new BayesianPlayer(1, view);
+            var agent = BayesianPlayer.TestInstance(1, view);
 
             game.RegisterAgent(1, agent);
 
@@ -222,7 +220,7 @@ namespace AgentTests
         {
             var game = new Game(3, GameTests.TestDeck());
             var view = new PrivateGameView(0, game);
-            var agent = new BayesianPlayer(0, view);
+            var agent = BayesianPlayer.TestInstance(0, view);
 
             game.RegisterAgent(0, agent);
 

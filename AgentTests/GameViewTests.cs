@@ -2,6 +2,8 @@
 using Hanabi;
 using HanabiTests;
 using NUnit.Framework;
+using Shouldly;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +17,7 @@ namespace AgentTests
             var game = new Game(2, GameTests.TestDeck());
             var adapter = new PrivateGameView(0, game);
 
-            List<string> availableMoves = adapter.AvailableMoves().ToList();
+            List<string> availableMoves = adapter.GetAvailableMoves().ToList();
 
             Assert.That(availableMoves.Count, Is.EqualTo(16));
             Assert.That(availableMoves.Contains("discard 0"));
@@ -42,7 +44,7 @@ namespace AgentTests
             var game = new Game(2, GameTests.TestDeck()) { NumTokens = 0 };
             var view = new PrivateGameView(0, game);
 
-            List<string> availableMoves = view.AvailableMoves().ToList();
+            List<string> availableMoves = view.GetAvailableMoves().ToList();
 
             Assert.That(availableMoves.Count, Is.EqualTo(10));
             Assert.That(availableMoves.Contains("discard 0"));
@@ -80,7 +82,22 @@ namespace AgentTests
             Assert.That(resultingState.NumTokens, Is.EqualTo(2));
 
             // The player should have received the hypothetical next card (it goes to the end of their hand)
-            Assert.That(resultingState.PlayerHands[0].Last().Equals(new Card(Color.Green, 5)));
+            Assert.That(resultingState.OwnHand.Last().Equals(hypotheticalNextCard.CardId));
+        }
+
+        [Test]
+        public void ReorderHand()
+        {
+            var testDeck = GameTests.TestDeck();
+            var game = new Game(2, testDeck) { NumTokens = 1 };
+            var view = new PrivateGameView(0, game);
+            List<Guid> player0Hand = new List<Guid> { testDeck._cards[0].CardId, testDeck._cards[1].CardId, testDeck._cards[2].CardId, testDeck._cards[3].CardId, testDeck._cards[4].CardId };
+
+            view.OwnHand.ShouldBeEquivalentTo(player0Hand);
+
+            view.ReorderHand(player0Hand.Reverse<Guid>().ToList());
+
+            view.OwnHand.ShouldBeEquivalentTo(player0Hand.Reverse<Guid>().ToList());
         }
     }
 }

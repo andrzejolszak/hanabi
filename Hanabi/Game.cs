@@ -83,9 +83,9 @@
             var moveInfo = new DiscardInfo
             {
                 PlayerIndex = CurrentPlayer,
-                HandPosition = positionInHand,
+                HandIndex = positionInHand,
                 CardColor = discardedCard.Color,
-                CardNumber = discardedCard.Number
+                CardNumber = discardedCard.Number,
             };
 
             if (informAgents)
@@ -118,8 +118,13 @@
                 PlayerIndex = CurrentPlayer,
                 RecipientIndex = player,
                 Color = color,
-                HandPositions = Enumerable.Range(0, CardsPerPlayer).Where(i => PlayerHands[player][i].Color == color).ToList()
+                HandIndexes = Enumerable.Range(0, CardsPerPlayer).Where(i => PlayerHands[player][i].Color == color).ToList()
             };
+
+            foreach (int idx in moveInfo.HandIndexes)
+            {
+                PlayerHands[player][idx].SetColorKnown();
+            }
 
             if (informAgents)
             {
@@ -144,11 +149,6 @@
                 throw new RuleViolationException("You can only tell a player about a number if they are " +
                     "holding at least one card of that number");
 
-            var handPositionsString = Enumerable.Range(0, CardsPerPlayer)
-                .Where(i => PlayerHands[player][i].Number == number)
-                .Select(i => i.ToString())
-                .Aggregate("", (current, next) => current + " " + next);
-
             NumTokens--;
 
             var moveInfo = new TellNumberInfo
@@ -156,8 +156,13 @@
                 PlayerIndex = CurrentPlayer,
                 RecipientIndex = player,
                 Number = number,
-                HandPositions = Enumerable.Range(0, CardsPerPlayer).Where(i => PlayerHands[player][i].Number == number).ToList()
+                HandIndexes = Enumerable.Range(0, CardsPerPlayer).Where(i => PlayerHands[player][i].Number == number).ToList()
             };
+
+            foreach (int idx in moveInfo.HandIndexes)
+            {
+                PlayerHands[player][idx].SetNumberKnown();
+            }
 
             if (informAgents)
             {
@@ -208,7 +213,7 @@
             var moveInfo = new PlayCardInfo
             {
                 PlayerIndex = CurrentPlayer,
-                HandPosition = positionInHand,
+                HandIndex = positionInHand,
                 CardColor = playedCard.Color,
                 CardNumber = playedCard.Number,
             };

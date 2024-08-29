@@ -1,5 +1,7 @@
 ﻿using Hanabi;
 using CommandLine;
+using System.Collections.Concurrent;
+using Agents.BayesPlayer;
 
 namespace Agents
 {
@@ -14,6 +16,8 @@ namespace Agents
 
     public class Program
     {
+        public static readonly ConcurrentBag<IPlayer> PlayerRegistrations = new ConcurrentBag<IPlayer>() { new BayesianPlayer(), new BayesianPlayer(), new BayesianPlayer(), new BayesianPlayer() };
+
         public static void Main(string[] args)
         {
             Parser.Default.ParseArguments<Options>(args)
@@ -28,13 +32,11 @@ namespace Agents
 
             int numPlayers = 4;
 
-            var agents = new List<BayesianPlayer>();
+            var agents = Program.PlayerRegistrations.ToList();
             var game = new Game(numPlayers, Deck.Random(randomizer));
             for (int i = 0; i < numPlayers; i++)
             {
-                var agent = new BayesianPlayer();
-                game.RegisterAgent(i, agent);
-                agents.Add(agent);
+                game.RegisterAgent(i, agents[i]);
             }
 
             var runner = new GameRunner(game, agents, randomizer);
