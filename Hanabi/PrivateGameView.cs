@@ -155,6 +155,8 @@ namespace Hanabi
             return this._game.PlayerHands[playerIndex][handIndex];
         }
 
+        public int GetStackValue(Color color) => this._game.Stacks[color];
+
         public int NumPlayers => _game.NumPlayers;
         public int NumTokens => _game.NumTokens;
         public int NumLives => _game.NumLives;
