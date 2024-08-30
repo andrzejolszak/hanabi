@@ -23,31 +23,38 @@ namespace Agents
                     ReadCommand();
 
                 string move = _agents[_game.CurrentPlayer].TakeTurn();
-                Console.WriteLine($"Player {_game.CurrentPlayer}: {move}");
-                this.MakeMove(move);
+                int player = this._game.CurrentPlayer;
+                string details = this.MakeMove(move);
+                Console.WriteLine($"Player {player}: {move} [{details}]");
             }
 
-            Console.WriteLine($"Game over! Final score: {_game.Score()}");
+            Console.WriteLine($"Game over: {this._game.GameOverStatus}! Final score: {_game.Score()}");
         }
 
-        public void MakeMove(string move)
+        public string MakeMove(string move)
         {
             string[] tokens = move.Split();
 
             if (tokens[0] == "tell")
             {
                 Tell(tokens);
-                return;
+                return string.Empty;
             }
 
             switch (tokens[0])
             {
                 case "play":
-                    _game.PlayCard(int.Parse(tokens[1]));
-                    return;
+                    Card card = this._game.PlayerHands[this._game.CurrentPlayer][int.Parse(tokens[1])];
+                    bool success = _game.PlayCard(int.Parse(tokens[1]));
+
+                    return $"{card.Color}:{card.Number}{(success ? " -> OK" : " -> *** FUSE ***")}";
                 case "discard":
+                    card = this._game.PlayerHands[this._game.CurrentPlayer][int.Parse(tokens[1])];
                     _game.Discard(int.Parse(tokens[1]));
-                    return;
+                    return $"{card.Color}:{card.Number}";
+
+                default:
+                    throw new InvalidOperationException(tokens[0]);
             }
         }
 

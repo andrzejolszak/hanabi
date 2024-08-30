@@ -6,10 +6,12 @@ namespace Hanabi
     /// </summary>
     public class PlayCardInfo : IMoveInfo
     {
-        public int PlayerIndex { get; set; }
-        public int HandIndex { get; set; }
-        public Color CardColor { get; set; }
-        public int CardNumber { get; set; }
+        public int PlayerIndex { get; init; }
+        public int HandIndex { get; init; }
+        public Guid CardId { get; init; }
+        public Color CardColor { get; init; }
+        public int CardNumber { get; init; }
+        public bool WasSuccess { get; init; }
 
         public static string FormatMoveText(int handIndex) => $"play {handIndex}";
     }

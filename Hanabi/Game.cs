@@ -16,6 +16,7 @@
         public int CardsPerPlayer { get; }
         public Deck Deck { get; set;  }
         public bool IsOver { get; internal set; }
+        public string? GameOverStatus { get; set; }
         public Dictionary<Color, int> Stacks { get; set; }
         public List<Card> DiscardPile { get; internal set; } = new List<Card>();
 
@@ -84,6 +85,7 @@
             {
                 PlayerIndex = CurrentPlayer,
                 HandIndex = positionInHand,
+                CardId = discardedCard.CardId,
                 CardColor = discardedCard.Color,
                 CardNumber = discardedCard.Number,
             };
@@ -118,12 +120,15 @@
                 PlayerIndex = CurrentPlayer,
                 RecipientIndex = player,
                 Color = color,
-                HandIndexes = Enumerable.Range(0, CardsPerPlayer).Where(i => PlayerHands[player][i].Color == color).ToList()
+                HandIndexes = Enumerable.Range(0, PlayerHands[player].Count)
+                    .Where(i => PlayerHands[player][i].Color == color)
+                    .Select(i => (i, PlayerHands[player][i].CardId, !PlayerHands[player][i].ColorKnown))
+                    .ToList()
             };
 
-            foreach (int idx in moveInfo.HandIndexes)
+            foreach (var idx in moveInfo.HandIndexes)
             {
-                PlayerHands[player][idx].SetColorKnown();
+                PlayerHands[player][idx.HandIndex].SetColorKnown();
             }
 
             if (informAgents)
@@ -156,12 +161,15 @@
                 PlayerIndex = CurrentPlayer,
                 RecipientIndex = player,
                 Number = number,
-                HandIndexes = Enumerable.Range(0, CardsPerPlayer).Where(i => PlayerHands[player][i].Number == number).ToList()
+                HandIndexes = Enumerable.Range(0, PlayerHands[player].Count)
+                    .Where(i => PlayerHands[player][i].Number == number)
+                    .Select(i => (i, PlayerHands[player][i].CardId, !PlayerHands[player][i].NumberKnown))
+                    .ToList()
             };
 
-            foreach (int idx in moveInfo.HandIndexes)
+            foreach (var idx in moveInfo.HandIndexes)
             {
-                PlayerHands[player][idx].SetNumberKnown();
+                PlayerHands[player][idx.HandIndex].SetNumberKnown();
             }
 
             if (informAgents)
@@ -175,11 +183,11 @@
             EndTurn();
         }
 
-        public void PlayCard(int positionInHand, bool informAgents = true)
+        public bool PlayCard(int positionInHand, bool informAgents = true)
         {
             Card playedCard = PlayerHands[CurrentPlayer][positionInHand];
-            
-            if (Stacks[playedCard.Color] == playedCard.Number - 1)
+            bool success = Stacks[playedCard.Color] == playedCard.Number - 1;
+            if (success)
             {
                 // Card can be played: add it to the stack
                 Stacks[playedCard.Color] = playedCard.Number;
@@ -190,6 +198,10 @@
                         NumTokens++;
 
                     IsOver = Stacks.Values.All(x => x == 5);
+                    if (IsOver)
+                    {
+                        GameOverStatus = "Win";
+                    }
                 }
 
                 if (playedCard.Number == 5 && NumTokens < MAX_TOKENS)
@@ -200,7 +212,10 @@
                 DiscardPile.Add(playedCard);
                 NumLives--;
                 if (NumLives == 0)
+                {
                     IsOver = true;
+                    GameOverStatus = "Lose - bomb";
+                }
             }
 
             PlayerHands[CurrentPlayer].RemoveAt(positionInHand);
@@ -214,8 +229,10 @@
             {
                 PlayerIndex = CurrentPlayer,
                 HandIndex = positionInHand,
+                CardId = playedCard.CardId,
                 CardColor = playedCard.Color,
                 CardNumber = playedCard.Number,
+                WasSuccess = success,
             };
 
             if (informAgents)
@@ -227,6 +244,8 @@
             }
 
             EndTurn();
+
+            return success;
         }
 
         public int Score() => Stacks.Values.Sum();
@@ -280,6 +299,7 @@
             else if (_isLastRound && CurrentPlayer == _playerWhoDrewLastCard)
             {
                 IsOver = true;
+                GameOverStatus = "Lose - moves";
             }
 
             CurrentPlayer = (CurrentPlayer + 1) % NumPlayers;

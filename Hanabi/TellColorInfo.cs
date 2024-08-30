@@ -4,10 +4,10 @@ namespace Hanabi
 {
     public class TellColorInfo : IMoveInfo
     {
-        public int PlayerIndex { get; set; }
-        public int RecipientIndex { get; set; }
-        public Color Color { get; set; }
-        public List<int> HandIndexes { get; set; } = new List<int>();
+        public int PlayerIndex { get; init; }
+        public int RecipientIndex { get; init; }
+        public Color Color { get; init; }
+        public List<(int HandIndex, Guid CardId, bool NewKnowledge)> HandIndexes { get; init; }
 
         public static string FormatMoveText(int playerIndex, Color color) => $"tell player {playerIndex} about color {PrivateGameView.GetColorName(color)}";
     }

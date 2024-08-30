@@ -69,6 +69,19 @@ namespace Agents.BayesPlayer
 
         public string TakeTurn()
         {
+            // If any fully known card can be played, then play it
+            var knowledge = this._view.OwnHandCardsKnowledge;
+            for (int i = 0; i < this._view.CardCount; i++)
+            {
+                if (knowledge[i].Color is not null && knowledge[i].Number is not null)
+                {
+                    if (this._view.GetStackValue(knowledge[i].Color!.Value) == knowledge[i].Number - 1)
+                    {
+                        return PlayCardInfo.FormatMoveText(i);
+                    }
+                }
+            }
+
             IEnumerable<string> availableMoves = _view.GetAvailableMoves();
 
             double bestExpectedScore = double.NegativeInfinity;
@@ -199,7 +212,7 @@ namespace Agents.BayesPlayer
 
             for (int i = 0; i < _view.CardsPerPlayer; i++)
             {
-                if (info.HandIndexes.Contains(i))
+                if (info.HandIndexes.Any(x => x.HandIndex == i))
                 {
                     HandOptionTrackers[i].NumberIs(info.Number);
                 }
@@ -217,7 +230,7 @@ namespace Agents.BayesPlayer
 
             for (int i = 0; i < _view.CardsPerPlayer; i++)
             {
-                if (info.HandIndexes.Contains(i))
+                if (info.HandIndexes.Any(x => x.HandIndex == i))
                 {
                     HandOptionTrackers[i].ColorIs(info.Color);
                 }

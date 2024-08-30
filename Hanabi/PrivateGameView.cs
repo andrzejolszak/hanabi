@@ -185,8 +185,12 @@ namespace Hanabi
 
         public List<Guid> OwnHand => this._game.PlayerHands[this._playerIndex].Select(x => x.CardId).ToList();
 
+        public List<(Guid CardId, Color? Color, int? Number)> OwnHandCardsKnowledge => this._game.PlayerHands[this._playerIndex].Select(x => (x.CardId, x.ColorKnown ? x.Color : (Color?)null, x.NumberKnown ? x.Number : (int?)null)).ToList();
+
         public bool IsWinnable => this._game.IsWinnable();
 
         public int Score => this._game.Score();
+
+        public int CardCount => this._game.PlayerHands[this._playerIndex].Count;
     }
 }
