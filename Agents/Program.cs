@@ -5,29 +5,20 @@ using Agents.BayesPlayer;
 
 namespace Agents
 {
-    public class Options
-    {
-        [Option('s', "seed", Required = false, HelpText = "You can provide a random seed for reproducible RNG")]
-        public int? Seed { get; set; } = null;
-
-        [Option('d', "debug", HelpText = "Runs the game in debug mode, in which the user is prompted to enter debug commands after each round")]
-        public bool Debug { get; set; } = false;
-    }
-
     public class Program
     {
         public static readonly ConcurrentBag<IPlayer> PlayerRegistrations = new ConcurrentBag<IPlayer>() { new BayesianPlayer(), new BayesianPlayer(), new BayesianPlayer(), new BayesianPlayer() };
 
         public static void Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(Run)
-                .WithNotParsed(HandleParseError);
-        }
+            Queue<string>? imposedMoves = null;
+            int seed = Guid.NewGuid().GetHashCode();
 
-        public static void Run(Options options)
-        {
-            var randomizer = new Randomizer(options.Seed);
+            // Run config:
+            // imposedMoves = new Queue<string>(new []{ "tell player 1 about number 1", "play 0", "discard 2" });
+            // seed = 3239583;
+
+            var randomizer = new Randomizer(seed);
             Console.WriteLine($"Random seed: {randomizer.Seed}");
 
             int numPlayers = 4;
@@ -39,8 +30,8 @@ namespace Agents
                 game.RegisterAgent(i, agents[i]);
             }
 
-            var runner = new GameRunner(game, agents, randomizer);
-            runner.Run(options.Debug);
+            var runner = new GameRunner(game, agents);
+            runner.Run(imposedMoves, imposedMoves?.Count);
         }
 
         public static void HandleParseError(IEnumerable<Error> errors)

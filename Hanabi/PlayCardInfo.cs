@@ -14,5 +14,7 @@ namespace Hanabi
         public bool WasSuccess { get; init; }
 
         public static string FormatMoveText(int handIndex) => $"play {handIndex}";
+
+        public static bool IsPlay(string move) => move.StartsWith("play ");
     }
 }

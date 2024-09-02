@@ -1,5 +1,9 @@
 ﻿namespace Hanabi
 {
+    /// <summary>
+    /// A Hanabi deck is composed of 50 cards, 10 for each of the colours red, yellow, green, blue, and white.
+    /// The values of the 10 cards of each colour are 1 1 1 2 2 3 3 4 4 5
+    /// </summary>
     public class Deck : ICloneable
     {
         private int _index = 0;

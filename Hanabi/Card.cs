@@ -17,8 +17,7 @@
 
         public override string ToString()
         {
-            string colorString = Enum.GetName(typeof(Color), Color) ?? "";
-            return colorString + " " + Number.ToString();
+            return $"{Enum.GetName(typeof(Color), Color)[0]}{(this.ColorKnown ? "+" : string.Empty)}{this.Number}{(this.NumberKnown ? "+" : string.Empty)}";
         }
 
         public bool Equals(Card other)

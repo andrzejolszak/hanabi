@@ -5,8 +5,8 @@ namespace Agents.BayesPlayer
     public class BayesianPlayer : IPlayer
     {
         PrivateGameView _view;
-        const int _numMonteCarloSamples = 100;
-        const int _evaluationDepth = 0;
+        const int _numMonteCarloSamples = 200;
+        const int _evaluationDepth = 3;
 
         private Randomizer _random;
 
@@ -77,7 +77,19 @@ namespace Agents.BayesPlayer
                 {
                     if (this._view.GetStackValue(knowledge[i].Color!.Value) == knowledge[i].Number - 1)
                     {
-                        return PlayCardInfo.FormatMoveText(i);
+                        return PlayCardInfo.FormatMoveText(i) + " [fk1]";
+                    }
+                }
+            }
+
+            // If any fully known card is already played and we are low on tokens, then discard it
+            for (int i = 0; i < this._view.CardCount; i++)
+            {
+                if (knowledge[i].Color is not null && knowledge[i].Number is not null)
+                {
+                    if (this._view.GetStackValue(knowledge[i].Color!.Value) >= knowledge[i].Number)
+                    {
+                        return DiscardInfo.FormatMoveText(i) + " [fk2]";
                     }
                 }
             }
@@ -88,6 +100,16 @@ namespace Agents.BayesPlayer
             string? bestMove = null;
             foreach (string move in availableMoves)
             {
+                if (DiscardInfo.IsDiscard(move) || PlayCardInfo.IsPlay(move))
+                {   
+                    int index = int.Parse(move.Split(" ")[1]);
+                    if (knowledge[index].Color is not null && knowledge[index].Number is not null)
+                    {   
+                        // Don't discard fully known cards that can be played in the future
+                        continue;
+                    }
+                }
+
                 // Generate a random hand from the individual probability distributions
                 IList<HiddenState> possibleHiddenStates = DrawHiddenStates(HandOptionTrackers, DeckOptionTracker, _numMonteCarloSamples, _random);
 
