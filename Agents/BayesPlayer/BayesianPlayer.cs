@@ -95,21 +95,31 @@ namespace Agents.BayesPlayer
             }
 
             IEnumerable<string> availableMoves = _view.GetAvailableMoves();
+            IEnumerable<string> filteredMoves = availableMoves.Where(move =>
+            {
+                if (DiscardInfo.IsDiscard(move) || PlayCardInfo.IsPlay(move))
+                {
+                    int index = int.Parse(move.Split(" ")[1]);
+                    if (knowledge[index].Color is not null && knowledge[index].Number is not null)
+                    {
+                        // Don't discard fully known cards that can be played in the future
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            if (!filteredMoves.Any())
+            {
+                // Ensure that we can move
+                filteredMoves = availableMoves;
+            }
 
             double bestExpectedScore = double.NegativeInfinity;
             string? bestMove = null;
             foreach (string move in availableMoves)
             {
-                if (DiscardInfo.IsDiscard(move) || PlayCardInfo.IsPlay(move))
-                {   
-                    int index = int.Parse(move.Split(" ")[1]);
-                    if (knowledge[index].Color is not null && knowledge[index].Number is not null)
-                    {   
-                        // Don't discard fully known cards that can be played in the future
-                        continue;
-                    }
-                }
-
                 // Generate a random hand from the individual probability distributions
                 IList<HiddenState> possibleHiddenStates = DrawHiddenStates(HandOptionTrackers, DeckOptionTracker, _numMonteCarloSamples, _random);
 
